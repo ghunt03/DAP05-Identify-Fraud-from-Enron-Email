@@ -1,35 +1,223 @@
-<html>
-<head>
-	<title>DAP05 - Identify Fraud from Enron Email</title>
-	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<!-- Latest compiled and minified CSS -->
-	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
+	<html>
+	<head>
+		<title>DAP05 - Identify Fraud from Enron Email</title>
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+		<!-- Latest compiled and minified CSS -->
+		<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" integrity="sha384-1q8mTJOASx8j1Au+a5WDVnPi2lkFfwwEAa8hDDdjZlpLegxhjVME1fgjWPGmkzs7" crossorigin="anonymous">
 
-	<!-- Optional theme -->
-	<link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.6/flatly/bootstrap.min.css" rel="stylesheet" integrity="sha384-XYCjB+hFAjSbgf9yKUgbysEjaVLOXhCgATTEBpCqT1R3jvG5LGRAK5ZIyRbH5vpX" crossorigin="anonymous">
+		<!-- Optional theme -->
+		<link href="https://maxcdn.bootstrapcdn.com/bootswatch/3.3.6/readable/bootstrap.min.css" rel="stylesheet" integrity="sha384-/x/+iIbAU4qS3UecK7KIjLZdUilKKCjUFVdwFx8ba7S/WvxbrYeQuKEt0n/HWqTx" crossorigin="anonymous">
 
-	<!-- Latest compiled and minified JavaScript -->
-	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
-</head>
-<body>
+		<!-- Latest compiled and minified JavaScript -->
+		<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js" integrity="sha384-0mSbJDEHialfmuBBQP6A4Qrprq5OVfW37PRR3j5ELqxss1yVqOtnepnHVP9aJ7xS" crossorigin="anonymous"></script>
+	</head>
+	<body>
 
-	<nav class="navbar navbar-default navbar-static-top">
-      <div class="container">
-        <div class="navbar-header">
-          <a class="navbar-brand" href="#">Machine Learning: Identify Fraud from Enron Email</a>
-        </div>
-        
-      </div>
-    </nav>
-	<div class="container">
+		<nav class="navbar navbar-default navbar-static-top">
+			<div class="container">
+				<div class="navbar-header">
+					<a class="navbar-brand" href="#">Machine Learning: Identify Fraud from Enron Email</a>
+				</div>
+
+			</div>
+		</nav>
+
+		<div class="container">
 
 		<h1>Overview</h1>
-		Summarize for us the goal of this project and how machine learning is useful in trying to accomplish it. As part of your answer, give some background on the dataset and how it can be used to answer the project question. Were there any outliers in the data when you got it, and how did you handle those?  [relevant rubric items: “data exploration”, “outlier investigation”]
+		
+		<p>
+			The purpose / goal for this project is to use the financial and email data available to us from the Enron Fraud case and determine who are the people of interest and who warrants further investigation. Whilst the data is historic and the people have been already identifed publicly, this project is using Machine Learning to identify these people through the use of data.
+		</p>
+		<h2>Data Analysis</h2>
+		<table class="table table-striped">
+			<thead>
+				<tr>
+					<th>Description</th>
+					<th align="right">Result</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>
+						Number of people
+					</td>	
+					<td align="right">
+						146
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Number of People of Interest
+					</td>	
+					<td align="right">
+						18
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Number of Features / Variables
+					</td>
+					<td align="right">
+						21
+					</td>
+				</tr>
+			</tbody>	
+		</table>
+
+		<h3>Cleanliness / Completness of data</h3>
+		<p>The table below shows that the financial / payment data is missing for about 14.38% of people in the dataset, however there is 0% missing for the people of interest.</p>
+		<table class="table table-striped">
+			<thead>
+				<tr>
+					<th>Description</th>
+					<th>Result</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>
+						Percentage of people with no payment data
+					</td>	
+					<td align="right">
+						14.4%
+					</td>
+				</tr>
+				<tr>
+					<td>
+						Percentage of POI with no payment data
+					</td>	
+					<td align="right">
+						0.0%
+					</td>
+				</tr>
+			</tbody>	
+		</table>
+		<h2>Outliers</h2>
+		<p>During the initial analysis of the data and by plotting features such as Salaries vs Bonuses, I was able to identify that there was one significant outlier. This outlier was caused by the total row been added to the dataset. </p>
+		<div class="row">
+			<div class="col-md-6">
+				<img src="assets/figure_1.png" width="80%">
+				<div class="caption">
+					<span class="label label-default ">Figure 1: Plot of salaries and bonuses before outliers removed</span>
+				</div>
+			</div>
+			<div class="col-md-6">
+				<img src="assets/figure_2.png" width="80%">
+				<div class="caption">
+					<span class="label label-default ">Figure 2: Plot of salaries and bonuses after outliers removed</span>
+				</div>
+			</div>
+		</div>
+		<br />
+		<p>Other options for removing outliers would be to remove 10% of the plots that have the highest error or difference to the linear regression model, however in this instance I will not be doing this as the remaining outliers in the data represent the top positions from Enron and would warrant further investigation.</p>
+
 
 
 
 		<h1>Features</h1>
+
 		What features did you end up using in your POI identifier, and what selection process did you use to pick them? Did you have to do any scaling? Why or why not? As part of the assignment, you should attempt to engineer your own feature that does not come ready-made in the dataset -- explain what feature you tried to make, and the rationale behind it. (You do not necessarily have to use it in the final analysis, only engineer and test it.) In your feature selection step, if you used an algorithm like a decision tree, please also give the feature importances of the features that you use, and if you used an automated feature selection function like SelectKBest, please report the feature scores and reasons for your choice of parameter values.  [relevant rubric items: “create new features”, “properly scale features”, “intelligently select feature”]
+
+		<p>The original dataset contains the following features: </p>
+		<table class="table">
+			<thead>
+				<tr>
+					<th>
+						Feature Name
+					</th>
+					<th>
+						Description
+					</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr>
+					<td>salary</td>
+					<td>the salary of each person</td>
+				</tr>
+				<tr>
+					<td>to_messages</td>
+					<td>The number of messages sent to the person</td>
+				</tr>
+				<tr>
+					<td>deferral_payments</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>total_payments</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>exercised_stock_options</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>bonus</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>restricted_stock</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>shared_receipt_with_poi</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>restricted_stock_deferred</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>total_stock_value</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>expenses</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>loan_advances</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>from_messages</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>other</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>from_this_person_to_poi</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>poi</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>director_fees</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>deferred_income</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>long_term_incentive</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>email_address</td>
+					<td></td>
+				</tr>
+				<tr>
+					<td>from_poi_to_this_person</td>
+					<td></td>
+				</tr>
+			</tbody>
+		</table>
 
 		<h1>Algorithm</h1>
 		What algorithm did you end up using? What other one(s) did you try? How did model performance differ between algorithms?  [relevant rubric item: “pick an algorithm”]
