@@ -27,7 +27,7 @@ data_dict.pop('TOTAL', 0 )
 
 
 
-features = ["poi", "shared_receipt_with_poi", "total_payments"]
+features = ["poi", "total_payments", "loan_advances"]
 plotData(data_dict, features)
 
 

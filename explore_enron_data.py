@@ -33,11 +33,20 @@ def calcPercentageOfFeature(data, feature, query=""):
 
 
 def getPeopleOfInterest(data):
-	people_of_interest = {}
+	poi_data = {}
+	people_names = []
 	for key, person_data in data.iteritems():
 		if person_data["poi"] == 1:
-			people_of_interest[key] = person_data
-	return people_of_interest
+			people_names.append(key)
+			poi_data[key] = person_data
+	return people_names, poi_data
+
+
+def getPeopleNames(data):
+	people_names = []
+	for key, person_data in data.iteritems():
+		people_names.append(key)	
+	return people_names
 
 def getFeatureValues(data, feature):
 	itemList = []
@@ -54,18 +63,21 @@ def getFeatureList(data):
 	return featureList 
 
 
+
 total_people = len(enron_data)
-people_of_interest = getPeopleOfInterest(enron_data)
+poi_names, poi_data = getPeopleOfInterest(enron_data)
 
 print "Number of people " + str(len(enron_data))
+print "All names:"
+pprint.pprint(getPeopleNames(enron_data))
 print "Number of features " + str(len(enron_data["SKILLING JEFFREY K"]))
-print "Number of Persons of interest (POI): " + str(len(people_of_interest))
-
+print "Number of Persons of interest (POI): " + str(len(poi_names))
+print "People of interest: {}".format(poi_names)
 
 percentage = calcPercentageOfFeature(enron_data, "total_payments", 'NaN')
 print "Percentage of people with no payment data: " + str(percentage)
 
-percentage = calcPercentageOfFeature(people_of_interest, "total_payments", 'NaN')
+percentage = calcPercentageOfFeature(poi_data, "total_payments", 'NaN')
 print "Percentage of POI with no payment data: " + str(percentage)
 
 
@@ -73,3 +85,6 @@ itemList = getFeatureValues(enron_data, "total_payments")
 print max(itemList)
 
 pprint.pprint(getFeatureList(enron_data))
+
+
+pprint.pprint(enron_data["THE TRAVEL AGENCY IN THE PARK"])
