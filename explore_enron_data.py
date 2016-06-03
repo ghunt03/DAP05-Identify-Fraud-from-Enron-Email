@@ -2,90 +2,34 @@
 
 import pickle
 import pprint
+import pandas
+import numpy as np
+import matplotlib.pyplot as plt
 enron_data = pickle.load(open("final_project/final_project_dataset.pkl", "r"))
 
-def getFeature(person_name, feature, includeDescription=True):
-	if includeDescription:
-		return "{0} - {1}: {2} ".format(person_name, 
-			feature, 
-			enron_data[person_name][feature]) 
-	else:
-		return enron_data[person_name][feature]
-
-def countFeature(data, feature, includeDescription=True, query=""):
-	featureCount = 0
-	for person_data in data.values():
-		if (not query == ""): 
-			if person_data[feature] == query: 
-				featureCount += 1
-		elif not person_data[feature] == 'NaN':
-			featureCount += 1
-	if includeDescription:
-		return feature + ": " +str(featureCount)
-	else:
-		return featureCount
-
-def calcPercentageOfFeature(data, feature, query=""):
-	people = len(data)
-	feature_count = countFeature(data, feature, False, query)
-	percentage = (float(feature_count) / people) * 100
-	return percentage
 
 
-def getPeopleOfInterest(data):
-	poi_data = {}
-	people_names = []
-	for key, person_data in data.iteritems():
-		if person_data["poi"] == 1:
-			people_names.append(key)
-			poi_data[key] = person_data
-	return people_names, poi_data
+df = pandas.DataFrame.from_dict(enron_data, orient='index', dtype=np.float)
 
 
-def getPeopleNames(data):
-	people_names = []
-	for key, person_data in data.iteritems():
-		people_names.append(key)	
-	return people_names
+print "Number of people " + str(len(df))
+print "Number of features " + str(len(df.columns))
+print "People of Interest " + str(df.groupby('poi').size()[1])
 
-def getFeatureValues(data, feature):
-	itemList = []
-	for person_name, person_data in data.iteritems():
-		value = enron_data[person_name][feature]
-		if not value == 'NaN':
-			itemList.append(value)
-	return itemList
-
-def getFeatureList(data):
-	featureList = []
-	for key, value in data["SKILLING JEFFREY K"].iteritems():
-		featureList.append(key)
-	return featureList 
+dfTotalPayments = df.loc[:,['poi', 'total_payments']]
+totalRows = float(len(dfTotalPayments))
+poi_with_no_payments = dfTotalPayments[dfTotalPayments['poi'] == 1].isnull().sum()[1]
+non_poi_with_no_payments = dfTotalPayments[dfTotalPayments['poi'] == 0].isnull().sum()[1]
+print "Percentage of POI with no payment data: " + str(poi_with_no_payments / totalRows)
+print "Percentage of people with no payment data: " + str((non_poi_with_no_payments + poi_with_no_payments)  / totalRows)
 
 
-
-total_people = len(enron_data)
-poi_names, poi_data = getPeopleOfInterest(enron_data)
-
-print "Number of people " + str(len(enron_data))
-print "All names:"
-pprint.pprint(getPeopleNames(enron_data))
-print "Number of features " + str(len(enron_data["SKILLING JEFFREY K"]))
-print "Number of Persons of interest (POI): " + str(len(poi_names))
-print "People of interest: {}".format(poi_names)
-
-percentage = calcPercentageOfFeature(enron_data, "total_payments", 'NaN')
-print "Percentage of people with no payment data: " + str(percentage)
-
-percentage = calcPercentageOfFeature(poi_data, "total_payments", 'NaN')
-print "Percentage of POI with no payment data: " + str(percentage)
+dfNull = df.isnull().sum()
+dfNull.plot(kind="barh")
+plt.xlabel("Count of NaN")
+plt.show()
 
 
-itemList = getFeatureValues(enron_data, "total_payments")
-print max(itemList)
+print "Summary of Salary / Bonus information"
+print df.describe().loc[:,['salary','bonus']]
 
-pprint.pprint(getFeatureList(enron_data))
-enron_data.pop('TOTAL', 0)
-print(min(getFeatureValues(enron_data, "salary")))
-print(max(getFeatureValues(enron_data, "salary")))
-pprint.pprint(enron_data["THE TRAVEL AGENCY IN THE PARK"])
