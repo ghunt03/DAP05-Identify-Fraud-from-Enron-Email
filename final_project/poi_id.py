@@ -15,20 +15,11 @@ from sklearn.tree import DecisionTreeClassifier
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
 import numpy as np
-
+import matplotlib.pyplot as plt
 
 # Options for feature selction
 FS_OPTIONS = ['SelectKBest', 'tree']
 FEATURE_SELECTOR = FS_OPTIONS[0]
-NUM_FEATURES = 10
-
-PERF_FORMAT_STRING = "\
-\tAccuracy: {:>0.{display_precision}f}\tPrecision: {:>0.{display_precision}f}\
-\tRecall: {:>0.{display_precision}f}\tF1: {:>0.{display_precision}f}\t\
-F2: {:>0.{display_precision}f}"
-RESULTS_FORMAT_STRING = "\tTotal predictions: {:4d}\t\
-True positives: {:4d}\tFalse positives: {:4d}\
-\tFalse negatives: {:4d}\tTrue negatives: {:4d}"
 
 
 def getFeatureList(data):
@@ -61,15 +52,15 @@ def addNewFeatures(features_list, my_dataset):
         my_dataset[rec]['total_messages_with_poi'] = 0
         my_dataset[rec]['message_shared_fraction'] = 0
         my_dataset[rec]['excerised_stock_ratio'] = 0
-        my_dataset[rec]['loan_ratio'] = 0
         validStock = True
-        validLoan = True
         for key in total_messages:
             if value[key] != "NaN":
                 my_dataset[rec]['total_messages'] += value[key]
+        
         for key in total_messages_with_poi:
             if value[key] != "NaN":
                 my_dataset[rec]['total_messages_with_poi'] += value[key]
+        
         if my_dataset[rec]['total_messages'] > 0:
             my_dataset[rec]['message_shared_fraction'] = \
                 float(my_dataset[rec]['total_messages_with_poi']) / \
@@ -79,18 +70,10 @@ def addNewFeatures(features_list, my_dataset):
             if value[key] == "NaN":
                 validStock = False
                 break
-        for key in loan_ratio:
-            if value[key] == "NaN":
-                validLoan = False
-                break
         if validStock and my_dataset[rec]['total_stock_value'] != 0:
             my_dataset[rec]['excerised_stock_ratio'] = \
                 float(my_dataset[rec]['exercised_stock_options']) / \
                 my_dataset[rec]['total_stock_value']
-        if validLoan and my_dataset[rec]['total_payments'] != 0:
-            my_dataset[rec]['loan_ratio'] =  \
-                float(my_dataset[rec]['loan_advances']) / \
-                my_dataset[rec]['total_payments']
     return getFeatureList(my_dataset), my_dataset
 
 
@@ -101,7 +84,7 @@ def tuneKNeighbour():
     score_metric = 'precision'
 
     params = {'n_neighbors': range(1, 11), 'weights': ['uniform', 'distance'],
-              'p': [1, 2], 'leaf_size': [1, 5, 10, 20, 30, 40, 50, 60],
+              'p': [1, 2], 'leaf_size': [1, 5, 9, 10, 20, 30, 40, 50, 60],
               'algorithm': ['auto', 'ball_tree', 'kd_tree', 'brute']}
 
     classifier = KNeighborsClassifier()
@@ -137,7 +120,7 @@ def getClassifiers():
     """
     gnb = GaussianNB()
     # decision tree after tuning with gridsearch
-    tree = DecisionTreeClassifier(max_features=10, min_samples_split=4,
+    tree = DecisionTreeClassifier(max_features=9, min_samples_split=4,
                                   criterion='entropy', max_depth=10,
                                   min_samples_leaf=2)
 
@@ -152,11 +135,25 @@ def testClassifers(classifiers):
     args:
         classifiers: list of classifiers to test
     """
-    from tester import test_classifier
+    PERF_FORMAT_STRING = "\
+    \tAccuracy: {:>0.{display_precision}f}\t\
+    Precision: {:>0.{display_precision}f}\t\
+    Recall: {:>0.{display_precision}f}\t"
+    RESULTS_FORMAT_STRING = "\tTotal predictions: {:4d}\t\
+    True positives: {:4d}\tFalse positives: {:4d}\
+    \tFalse negatives: {:4d}\tTrue negatives: {:4d}"
     print "Classifier Test Results"
     print "==================================="
     for clf in classifiers:
-        test_classifier(clf, my_dataset, features_list, 1000)
+        total_predictions, accuracy, precision, recall, true_positives, \
+            false_positives, true_negatives, false_negatives, f1, f2 = \
+            test_classifier(clf, features, labels)
+        print clf
+        print PERF_FORMAT_STRING.format(accuracy, precision, recall,
+                                        display_precision=5)
+        print RESULTS_FORMAT_STRING.format(total_predictions, true_positives,
+                                           false_positives, false_negatives,
+                                           true_negatives)
 
 
 def getTrainingTestSets(labels, features):
@@ -180,7 +177,106 @@ def getTrainingTestSets(labels, features):
     return features_train, features_test, labels_train, labels_test
 
 
-def getBestFeatures(features, labels, showResults=False):
+def scoreNumFeatures(test_feature_list, test_data_set):
+    """ function for determining the best number of features to use
+    """
+    scaler = MinMaxScaler()
+    recall_scores = []
+    precision_scores = []
+    feature_count = []
+    f1_scores = []
+    PERF_FORMAT_STRING = "\
+    Features: {:>0.{display_precision}f}\t\
+    Accuracy: {:>0.{display_precision}f}\t\
+    Precision: {:>0.{display_precision}f}\t\
+    Recall: {:>0.{display_precision}f}\t\
+    F1: {:>0.{display_precision}f}\t\
+    "
+
+    gnb, tree, kneighbour = getClassifiers()
+    clf = kneighbour
+    for x in range(1, len(test_feature_list)):
+        test_data = featureFormat(test_data_set, test_feature_list,
+                                  sort_keys=True)
+        test_labels, test_features = targetFeatureSplit(test_data)
+        test_features = scaler.fit_transform(test_features)
+        best_features = getBestFeatures(test_features, test_labels, x, False)
+        # Resplit data using best feature list
+        test_data = featureFormat(test_data_set, best_features,
+                                  sort_keys=True)
+        test_labels, test_features = targetFeatureSplit(test_data)
+        test_features = scaler.fit_transform(test_features)
+        total_predictions, accuracy, precision, recall, true_positives, \
+            false_positives, true_negatives, false_negatives, f1, f2 = \
+            test_classifier(clf, test_features, test_labels)
+        print PERF_FORMAT_STRING.format(x, accuracy, precision, recall, f1,
+                                        display_precision=5)
+        recall_scores.append(recall)
+        precision_scores.append(precision)
+        f1_scores.append(f1)
+        feature_count.append(x)
+
+    plt.plot(feature_count, recall_scores, marker='o', label="Recall")
+    plt.plot(feature_count, precision_scores, marker='o', label="Precision")
+    plt.plot(feature_count, f1_scores, marker='o', label="F1")
+    plt.legend()
+    plt.show()
+
+
+def test_classifier(clf, features, labels):
+    cv = StratifiedShuffleSplit(labels, 1000, random_state=42)
+    true_negatives = 0
+    false_negatives = 0
+    true_positives = 0
+    false_positives = 0
+    for train_idx, test_idx in cv:
+        features_train = []
+        features_test = []
+        labels_train = []
+        labels_test = []
+        for ii in train_idx:
+            features_train.append(features[ii])
+            labels_train.append(labels[ii])
+        for jj in test_idx:
+            features_test.append(features[jj])
+            labels_test.append(labels[jj])
+
+        # fit the classifier using training set, and test on test set
+        clf.fit(features_train, labels_train)
+        predictions = clf.predict(features_test)
+        for prediction, truth in zip(predictions, labels_test):
+            if prediction == 0 and truth == 0:
+                true_negatives += 1
+            elif prediction == 0 and truth == 1:
+                false_negatives += 1
+            elif prediction == 1 and truth == 0:
+                false_positives += 1
+            elif prediction == 1 and truth == 1:
+                true_positives += 1
+            else:
+                print "Warning: Found a predicted label not == 0 or 1."
+                print "All predictions should take value 0 or 1."
+                print "Evaluating performance for processed predictions:"
+                break
+    try:
+        total_predictions = np.sum([true_negatives, false_negatives,
+                                    false_positives, true_positives])
+        accuracy = 1.0*(true_positives + true_negatives)/total_predictions
+        precision = 1.0*true_positives/(true_positives+false_positives)
+        recall = 1.0*true_positives/(true_positives+false_negatives)
+        f1 = 2.0 * true_positives/(2*true_positives +
+                                   false_positives+false_negatives)
+        f2 = (1+2.0*2.0) * precision*recall/(4*precision + recall)
+        return total_predictions, accuracy, precision, recall,\
+            true_positives, false_positives, true_negatives, \
+            false_negatives, f1, f2
+    except:
+        print "Got a divide by zero when trying out:", clf
+        print "Precision or recall may be undefined due to a lack of \
+        true positive predicitons."
+
+
+def getBestFeatures(features, labels, num_features=10, showResults=False):
     """ Returns the best features based on the Feature Selection Options
     The features are selected based on the highest score / importance
     args:
@@ -196,18 +292,18 @@ def getBestFeatures(features, labels, showResults=False):
         clf = clf.fit(features_train, labels_train)
         importance = clf.feature_importances_
     else:
-        k_best = SelectKBest(k=NUM_FEATURES)
+        k_best = SelectKBest(k=num_features)
         k_best.fit(features_train, labels_train)
         importance = k_best.scores_
 
     feature_scores = sorted(zip(features_list[1:], importance),
                             key=lambda l: l[1], reverse=True)
-    for feature, importance in feature_scores[:NUM_FEATURES]:
+    for feature, importance in feature_scores[:num_features]:
         revised_feature_list.append(feature)
     if showResults:
         print "Top features and scores:"
         print "==================================="
-        pprint.pprint(feature_scores[:NUM_FEATURES])
+        pprint.pprint(feature_scores[:num_features])
     return revised_feature_list
 
 
@@ -232,6 +328,13 @@ data_dict.pop("THE TRAVEL AGENCY IN THE PARK", 0)
 my_dataset = data_dict
 features_list, my_dataset = addNewFeatures(features_list, my_dataset)
 
+"""
+# Uncomment to produce plot which compares evaluates the number of features
+# used
+
+scoreNumFeatures(features_list, my_dataset)
+"""
+
 # convert dictionary into features and labels
 data = featureFormat(my_dataset, features_list, sort_keys=True)
 labels, features = targetFeatureSplit(data)
@@ -241,19 +344,11 @@ scaler = MinMaxScaler()
 features = scaler.fit_transform(features)
 
 # select best features
-features_list = getBestFeatures(features, labels, True)
+features_list = getBestFeatures(features, labels, 10, True)
 
 # Re-split data based on new feature list after getBestFeatures
 data = featureFormat(my_dataset, features_list, sort_keys=True)
 labels, features = targetFeatureSplit(data)
-
-# re-scale
-features = scaler.fit_transform(features)
-
-# Get training and test data
-features_train, features_test, labels_train, labels_test = \
-	getTrainingTestSets(labels, features)
-
 
 """
 Uncomment to re-run algorithm tuning

@@ -85,6 +85,7 @@ itemList = getFeatureValues(enron_data, "total_payments")
 print max(itemList)
 
 pprint.pprint(getFeatureList(enron_data))
-
-
+enron_data.pop('TOTAL', 0)
+print(min(getFeatureValues(enron_data, "salary")))
+print(max(getFeatureValues(enron_data, "salary")))
 pprint.pprint(enron_data["THE TRAVEL AGENCY IN THE PARK"])
